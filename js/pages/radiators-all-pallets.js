@@ -1,5 +1,6 @@
 getStarted();
 var html = '';
+var maxPalletNumber = 0;
 
 document.addEventListener("DOMContentLoaded", function() {
 	getPallets();
@@ -11,11 +12,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
 function getPallets() {
 	
-	let query = ' { boards (ids: ' + boardId_RadiatorPallet + ') { items { id name column_values(ids:["' + columnId_RadiatorPallet_Status + '"]) { id text } } } } ';
+	let query = ' { boards (ids: ' + boardId_RadiatorPallet + ') { items_page(limit: 500, query_params: { order_by: { column_id:"name", direction:desc } }) { items { id name } } } } ';
 	
-	mondayAPI(query, function(data) {
+	mondayAPI2(query, function(data) {
 		
-		let pallets = data['data']['boards'][0]['items'];
+		let pallets = data['data']['boards'][0]['items_page']['items'];
 		
 		// sort pallets by pallet number
 		pallets.sort((a, b) => (parseInt(a.name) < parseInt(b.name)) ? 1 : -1);
@@ -27,10 +28,10 @@ function getPallets() {
 			
 			let palletId = pallet.id;
 			let palletName = pallet.name;
-			let palletStatus = getColumnText(pallet, columnId_RadiatorPallet_Status);
 			
 			if (palletName != "0") {
-				html += '<option value="' + palletId + '">Pallet ' + palletName + ' [' + palletStatus + ']</option>';
+				html += '<option value="' + palletId + '">Pallet ' + palletName + '</option>';
+				maxPalletNumber = (parseInt(maxPalletNumber) < parseInt(palletName) ? parseInt(palletName) : maxPalletNumber); // get max radiator number
 			}
 		}
 		
@@ -40,8 +41,6 @@ function getPallets() {
 			getPallet();
 		});
 		
-		getHashPallet();
-		
 	});
 }
 
@@ -49,25 +48,28 @@ function getPallet() {
 	
 	let palletId = gbc('#pallet-number').val();
 	
-	let query = ' { boards(ids: ' + boardId_RadiatorPallet + ') { items(ids: ' + palletId + ') { column_values(ids: ["' + columnId_RadiatorPallet_DispatchedDate + '", "' + columnId_RadiatorPallet_Status + '", "' + columnId_RadiatorPallet_DeliveredBy + '", "' + columnId_RadiatorPallet_Radiators + '"]) { id text value } } } } ';
+	let query = ' { boards(ids: ' + boardId_RadiatorPallet + ') { items_page(limit: 500, query_params: { ids: [' + palletId + '] }) { items { column_values(ids: ["' + columnId_RadiatorPallet_Status + '", "' + columnId_RadiatorPallet_Radiators + '", "connect_boards"]) { id text value } } } } } ';
 	
-	mondayAPI(query, function(data) {
+	mondayAPI2(query, function(data) {
 		
 		html = '';
 		
-		let pallet = data['data']['boards'][0]['items'][0];
+		let pallet = data['data']['boards'][0]['items_page']['items'][0];
 		
-		let palletDate = getColumnText(pallet, columnId_RadiatorPallet_DispatchedDate);
 		let palletStatus = getColumnText(pallet, columnId_RadiatorPallet_Status);
-		let palletDeliveredBy = getColumnText(pallet, columnId_RadiatorPallet_DeliveredBy);
 		let palletRadiatorIds = getColumnValue(pallet, columnId_RadiatorPallet_Radiators);
+		let palletDelivery = JSON.parse(getColumnValue(pallet, 'connect_boards'));
 		
 		html += '<p>';
 		
 		if (palletStatus == 'At GBC') {
 			html += 'Currently at GBC.';
 		} else {
-			html += 'Delivered by ' + fixName(palletDeliveredBy) + ' on ' + fixDate(palletDate);
+			if ('linkedPulseIds' in palletDelivery) {
+				palletDelivery = palletDelivery['linkedPulseIds'][0]['linkedPulseId'];
+				
+				html += 'Delivered.';
+			}
 		}
 		
 		html += '</p>';
@@ -96,13 +98,13 @@ function getRadiatorsOnPallets(palletRadiatorIds) {
 				radiatorIdArr.push(radiatorId['linkedPulseId']);
 			}
 			
-			let query = ' { boards(ids:' + boardId_Radiator + ') { items(ids: [' + radiatorIdArr.join(',') + ']) { id name group { id title } column_values(ids: ["' + columnId_Radiator_Colour + '", "' + columnId_Radiator_PalletIncoming + '", "' + columnId_Radiator_ReceivedDate + '", "' + columnId_Radiator_PalletOutgoing + '", "' + columnId_Radiator_DispatchDate + '", "' + columnId_Radiator_Status + '"]) {  text id } } } } ';
+			let query = ' { boards(ids:' + boardId_Radiator + ') { items_page(limit: 500, query_params: { ids: [' + radiatorIdArr.join(',') + '] }) { items { id name group { id title } column_values(ids: ["' + columnId_Radiator_Colour + '", "' + columnId_Radiator_PalletIncoming + '", "' + columnId_Radiator_ReceivedDate + '", "' + columnId_Radiator_PalletOutgoing + '", "' + columnId_Radiator_DispatchDate + '", "' + columnId_Radiator_Status + '"]) {  text id } } } } } ';
 			
-			mondayAPI(query, function(data) {
+			mondayAPI2(query, function(data) {
 				
 				html += '<ul class="uk-list uk-list-striped">';
 				
-				let radiators = data['data']['boards'][0]['items'];
+				let radiators = data['data']['boards'][0]['items_page']['items'];
 				
 				radiators.sort((a, b) => (
 					(getColumnText(a, columnId_Radiator_Colour) + a.name) > 
@@ -130,7 +132,7 @@ function getRadiatorsOnPallets(palletRadiatorIds) {
 					html += '</span>';
 					html += '<br />'
 					html += '<span class="uk-text-light uk-text-small">';
-					html += 'From purchase order: <a href="radiators-all-orders.html#' + radiatorPurchaseId + '">' + fixDate(radiatorPurchaseOrder) + '</a>';
+					html += 'From purchase order: ' + fixDate(radiatorPurchaseOrder);
 					html += '</span>';
 					html += '<br />';
 					html += '<span class="uk-text-light uk-text-small">';
@@ -154,14 +156,5 @@ function getRadiatorsOnPallets(palletRadiatorIds) {
 				
 			});
 		}
-	}
-}
-
-function getHashPallet() {
-	if(window.location.hash) {
-		let hash = window.location.hash.substring(1);
-		
-		gbc('#pallet-number').val(hash);
-		getPallet();
 	}
 }

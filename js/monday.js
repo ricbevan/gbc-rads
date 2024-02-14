@@ -4,7 +4,7 @@ function logOn() {
 	}
 	var query = '{ users (ids: [' + userId + ']) { name } }';
 	
-	mondayAPI(query, function(data) {
+	mondayAPI2(query, function(data) {
 		var loggedInUser = data['data']['users'];
 		
 		if (loggedInUser.length != 1) {
@@ -16,7 +16,7 @@ function logOn() {
 	});
 }
 
-function mondayAPI(query, func) {
+function mondayAPI2(query, func) {
 	showLoading();
 	
 	if (query == undefined) {
@@ -35,7 +35,8 @@ function mondayAPI(query, func) {
 		method: 'post',
 		headers: {
 			'Content-Type': 'application/json',
-			'Authorization' : apiKey
+			'Authorization' : apiKey,
+			'API-Version' : '2024-01'
 		},
 		body: JSON.stringify({
 			'query' : query

@@ -53,3 +53,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .gbc-blue, .gbc-blue:hover { background-color: #00A9F4 !important; }
 .gbc-indigo, .gbc-indigo:hover { background-color: #3D51B5 !important; }
 .gbc-violet, .gbc-violet:hover { background-color: #9D27B0 !important; }
+
+#canvas, #signature {
+  border-radius: 15px;
+}

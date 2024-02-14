@@ -31,8 +31,25 @@
 					<li><a href="index.html">Radiators</a></li>
 					<li><span>All Deliveries</span></li>
 				</ul>
-				<div class="uk-child-width-1-1" id="page" uk-grid hidden>
-					
+				<div class="uk-child-width-1-1 uk-grid-small" id="page" uk-grid>
+					<div>
+						<select class="uk-select" id="delivery"></select>
+						<div class="uk-margin-top" id="delivery-details" hidden>
+							<dl class="uk-description-list">
+								<dt>Status</dt>
+								<dd id="delivery-status"></dd>
+								<dt>Date & time delivered</dt>
+								<dd id="delivery-date-time"></dd>
+								<dt>Driver</dt>
+								<dd id="delivery-driver"></dd>
+							</dl>
+						</div>
+						<div class="uk-margin-top" id="delivery-pallets" hidden>
+						</div>
+						<div class="uk-flex uk-flex-center uk-margin-top" id="delivery-signed" hidden>
+							<img id="signature"/>
+						</div>
+					</div>
 				</div>
 				<div class="uk-alert-danger" id="error" uk-alert hidden>
 					<p></p>
@@ -54,7 +71,6 @@
 		<script src="js/gbc-office.js"></script>
 		<script src="js/monday.js"></script>
 		<script src="js/pages/radiators-all-deliveries.js"></script>
-		<!-- <script defer data-domain="rads.gbc.uk" src="https://stats.gbc.uk/js/index.js"></script> -->
 		<script defer data-domain="rads.gbc.uk" data-api="https://old-frog-340d.falling-shadow-dfed.workers.dev/gbc/event" src="https://old-frog-340d.falling-shadow-dfed.workers.dev/gbc/script.js"></script>
 	</body>
 </html>
